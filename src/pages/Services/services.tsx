@@ -1,8 +1,8 @@
-const Services = () => {
+const services = () => {
   return (
     <div>
       <h1>hello world!</h1>
     </div>
   );
 };
-export default Services;
+export default services;

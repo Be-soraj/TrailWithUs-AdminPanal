@@ -7,8 +7,8 @@ import {
 import AppLayout from "./layout/AppLayout";
 import AuthLayout from "./layout/AuthLayout";
 import Dashboard from "./pages/Dashboard/dashboard";
-import Services from "./pages/Services/services";
 import About from "./pages/About/about";
+import Services from "./pages/Services/services";
 
 const router = createBrowserRouter([
   {
@@ -18,7 +18,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
-      { path: "services", element: <Services /> },
+      { path: "services", element: < Services/> },
       { path: "about", element: <About /> },
     ],
   },
