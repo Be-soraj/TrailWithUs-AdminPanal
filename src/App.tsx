@@ -8,7 +8,8 @@ import AppLayout from "./layout/AppLayout";
 import AuthLayout from "./layout/AuthLayout";
 import Dashboard from "./pages/Dashboard/dashboard";
 import About from "./pages/About/about";
-import Services from "./pages/Services/services";
+import { Services } from "./pages/Services/services";
+import CreateTourWizard from "./pages/Services/CreateTourWizard";
 
 const router = createBrowserRouter([
   {
@@ -18,7 +19,11 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
-      { path: "services", element: < Services/> },
+      { path: "services", element: <Services /> },
+      {
+        path: "services/create-tour",
+        element: <CreateTourWizard />,
+      },
       { path: "about", element: <About /> },
     ],
   },
@@ -31,6 +36,7 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
 function App() {
   return (
     <>
@@ -38,4 +44,5 @@ function App() {
     </>
   );
 }
+
 export default App;
