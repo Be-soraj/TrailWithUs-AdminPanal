@@ -46,6 +46,7 @@ export interface Tour {
   priceUnit: string;
   departure_date: string;
   participants: number;
+  participantType: string;
   image: string;
   rating: number;
   destination: string;

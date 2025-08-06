@@ -1,9 +1,9 @@
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardFooter 
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,11 +24,12 @@ interface ApiResponse {
 }
 
 export const Services = () => {
-  const { data: response, isLoading, error } = useFetch<ApiResponse>(
-    `/services`,
-    ["services"]
-  );
- const navigate = useNavigate();
+  const {
+    data: response,
+    isLoading,
+    error,
+  } = useFetch<ApiResponse>(`/services`, ["services"]);
+  const navigate = useNavigate();
 
   if (isLoading) {
     return (
@@ -83,19 +84,26 @@ export const Services = () => {
 
   return (
     <div className="container py-8 space-y-8">
-      <div className="text-center space-y-2">
-        <Button onClick={() => navigate("/services/create-tour")}>+ Create Tour</Button>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Our Tours <span className="text-primary">({response.count})</span>
-        </h1>
-        <p className="text-muted-foreground max-w-2xl mx-auto">
-          {response.message}
-        </p>
+      <div className="flex justify-between items-center mx-2 " >
+        <div className="text-right space-y-2 w-[55%]">
+          <h1 className="text-3xl pr-4 font-bold tracking-tight">
+            Our Tours <span className="text-primary">({response.count})</span>
+          </h1>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            {response.message}
+          </p>
+        </div>
+        <Button onClick={() => navigate("/services/create-tour")}>
+          + Create Tour
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {response.data.map((tour) => (
-          <Card key={tour._id} className="hover:shadow-md transition-shadow overflow-hidden">
+          <Card
+            key={tour._id}
+            className="hover:shadow-md transition-shadow overflow-hidden m-0 pt-0"
+          >
             <div className="relative group">
               <img
                 src={tour.image}
@@ -103,10 +111,15 @@ export const Services = () => {
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
               />
-              <Badge variant="secondary" className="absolute top-2 right-2 flex items-center gap-1">
+              <Badge
+                variant="secondary"
+                className="absolute top-2 right-2 flex items-center gap-1"
+              >
                 <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
                 {tour.rating}
-                <span className="text-muted-foreground text-xs">({tour.reviewCount})</span>
+                <span className="text-muted-foreground text-xs">
+                  ({tour.reviewCount})
+                </span>
               </Badge>
             </div>
 
@@ -126,7 +139,11 @@ export const Services = () => {
                   </span>
                 )}
               </div>
-              <Button variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground">
+              <Button
+                variant="outline"
+                size="sm"
+                className="hover:bg-primary hover:text-primary-foreground"
+              >
                 View Details
               </Button>
             </CardFooter>

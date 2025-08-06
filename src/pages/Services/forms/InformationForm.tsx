@@ -35,7 +35,8 @@ const InformationForm = () => {
       
       <div>
         <Label>Information Description*</Label>
-        <Textarea 
+        <Textarea
+        className='mt-2' 
           rows={4} 
           {...register('infoDescription', { required: true })} 
         />
@@ -69,6 +70,7 @@ const InformationForm = () => {
             <div>
               <Label>Title*</Label>
               <Input 
+              className='mt-2'
                 {...register(`highlights.${index}.title`, { required: true })} 
               />
             </div>
@@ -77,6 +79,7 @@ const InformationForm = () => {
               <Label>Description*</Label>
               <Textarea 
                 rows={2} 
+                className='mt-2'
                 {...register(`highlights.${index}.description`, { required: true })} 
               />
             </div>
