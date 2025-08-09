@@ -30,6 +30,7 @@ export const Services = () => {
     error,
   } = useFetch<ApiResponse>(`/services`, ["services"]);
   const navigate = useNavigate();
+  console.log(response)
 
   if (isLoading) {
     return (
@@ -84,7 +85,7 @@ export const Services = () => {
 
   return (
     <div className="container py-8 space-y-8">
-      <div className="flex justify-between items-center mx-2 " >
+      <div className="flex justify-between items-center mx-2 ">
         <div className="text-right space-y-2 w-[55%]">
           <h1 className="text-3xl pr-4 font-bold tracking-tight">
             Our Tours <span className="text-primary">({response.count})</span>
@@ -143,6 +144,7 @@ export const Services = () => {
                 variant="outline"
                 size="sm"
                 className="hover:bg-primary hover:text-primary-foreground"
+                onClick={() => navigate(`/services/${tour._id}`)}
               >
                 View Details
               </Button>

@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard/dashboard";
 import About from "./pages/About/about";
 import { Services } from "./pages/Services/services";
 import CreateTourWizard from "./pages/Services/CreateTourWizard";
+import ServicesInfo from "./pages/Services/ServicesInfo";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
       { path: "services", element: <Services /> },
+      { path: "/services/:id", element: <ServicesInfo /> },
       {
         path: "services/create-tour",
         element: <CreateTourWizard />,
