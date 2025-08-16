@@ -11,12 +11,14 @@ import About from "./pages/About/about";
 import { Services } from "./pages/Services/services";
 import CreateTourWizard from "./pages/Services/CreateTourWizard";
 import ServicesInfo from "./pages/Services/ServicesInfo";
+import { BookedTour } from "./pages/BookedTours/bookedTours";
+import ComingSoon from "./components/common/ComingSoonError";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: <AppLayout />,
-    errorElement: "",
+    errorElement: <ComingSoon message="ComingSoon !" />,
     children: [
       { index: true, element: <Navigate to="/dashboard" replace /> },
       { path: "dashboard", element: <Dashboard /> },
@@ -27,6 +29,7 @@ const router = createBrowserRouter([
         element: <CreateTourWizard />,
       },
       { path: "about", element: <About /> },
+      { path: "bookedTour", element: <BookedTour /> },
     ],
   },
   {
