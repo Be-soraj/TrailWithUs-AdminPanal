@@ -1,14 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from "react";
 import type { Tour } from "@/types/tour";
 
-export type TourSection = 
-  | 'basic' 
-  | 'information' 
-  | 'tourPlan' 
-  | 'location' 
-  | 'gallery'
-  | keyof Tour;
-
 interface TourFormContextType {
   tourData: Partial<Tour>;
   setTourData: (data: Partial<Tour>) => void;
@@ -17,15 +9,13 @@ interface TourFormContextType {
   resetForm: () => void;
 }
 
-const TourFormContext = createContext<TourFormContextType | undefined>(undefined);
+const TourFormContext = createContext<TourFormContextType | undefined>(
+  undefined
+);
 
 export const TourFormProvider = ({ children }: { children: ReactNode }) => {
   const [tourData, setTourData] = useState<Partial<Tour>>({});
   const [currentStep, setCurrentStep] = useState(0);
-
-  const updateTourData = (data: Partial<Tour>) => {
-    setTourData((prev) => ({ ...prev, ...data }));
-  };
 
   const resetForm = () => {
     setTourData({});
@@ -34,13 +24,7 @@ export const TourFormProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <TourFormContext.Provider
-      value={{
-        tourData,
-        setTourData: updateTourData,
-        currentStep,
-        setCurrentStep,
-        resetForm,
-      }}
+      value={{ tourData, setTourData, currentStep, setCurrentStep, resetForm }}
     >
       {children}
     </TourFormContext.Provider>

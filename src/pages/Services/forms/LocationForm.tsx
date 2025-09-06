@@ -5,9 +5,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Text from "@/components/common/text";
+import usePut from "@/hooks/usePut";
+import type { Tour } from "@/types/tour";
 
 const LocationStep = () => {
   const { tourData, setTourData, setCurrentStep } = useTourForm();
+
+  if (!tourData._id) {
+    return (
+      <div className="p-6 space-y-6">
+        <Text type="heading">Error</Text>
+        <p>No tour ID found. Please complete the previous steps first.</p>
+        <Button variant="outline" onClick={() => setCurrentStep(2)}>
+          Go Back to Tour Plan
+        </Button>
+      </div>
+    );
+  }
+
   const { register, handleSubmit } = useForm({
     defaultValues: tourData.location || {
       title: "",
@@ -17,12 +32,31 @@ const LocationStep = () => {
     },
   });
 
+  const { mutate: updateTour, isPending } = usePut<{
+    success: boolean;
+    data: Tour;
+  }>(
+    `/services/${tourData._id}`,
+    {},
+    {
+      onSuccess: (result) => {
+        setTourData(result.data); // Use full updated data
+        setCurrentStep(4);
+      },
+      onError: (error) => {
+        alert(`Failed to update location: ${error.message}`);
+      },
+    }
+  );
+
   const onSubmit = (data: any) => {
-    setTourData({
-      ...tourData,
-      location: data,
-    });
-    setCurrentStep(4);
+    // Merge the updated location with the existing tourData
+    const updatedTourData = {
+      ...tourData, // Spread the existing tourData to retain all fields
+      location: data, // Update only the location field
+    };
+
+    updateTour(updatedTourData); // Send the full data to the API
   };
 
   return (
@@ -78,7 +112,9 @@ const LocationStep = () => {
         >
           Back
         </Button>
-        <Button type="submit">Next</Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Updating..." : "Next"}
+        </Button>
       </div>
     </form>
   );

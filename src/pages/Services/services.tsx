@@ -30,7 +30,7 @@ export const Services = () => {
     error,
   } = useFetch<ApiResponse>(`/services`, ["services"]);
   const navigate = useNavigate();
-  console.log(response)
+  console.log(response);
 
   if (isLoading) {
     return (
@@ -78,6 +78,9 @@ export const Services = () => {
           <AlertDescription>
             There are currently no tours available. Please check back later.
           </AlertDescription>
+          <Button onClick={() => navigate("/services/create-tour")}>
+            + Create Tour
+          </Button>
         </Alert>
       </div>
     );
@@ -107,19 +110,22 @@ export const Services = () => {
           >
             <div className="relative group">
               <img
-                src={tour.image}
+                src={tour.image || "/placeholder-image.jpg"}
                 alt={tour.name}
                 className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder-image.jpg";
+                }}
               />
               <Badge
                 variant="secondary"
                 className="absolute top-2 right-2 flex items-center gap-1"
               >
                 <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
-                {tour.rating}
+                {tour.rating || 0}
                 <span className="text-muted-foreground text-xs">
-                  ({tour.reviewCount})
+                  ({tour.reviewCount || 0})
                 </span>
               </Badge>
             </div>

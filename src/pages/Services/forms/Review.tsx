@@ -2,43 +2,50 @@ import { useTourForm } from "@/context/TourFormContext";
 import { Button } from "@/components/ui/button";
 import Text from "@/components/common/text";
 import { useNavigate } from "react-router-dom";
-import usePost from "@/hooks/usePost";
+import usePut from "@/hooks/usePut";
 import { useState } from "react";
 import { toast } from "react-toastify";
+import type { Tour } from "@/types/tour";
 
 const Review = () => {
   const { tourData, setCurrentStep, resetForm } = useTourForm();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const createTourMutation = usePost("/services");
+  if (!tourData._id) {
+    return (
+      <div className="p-6 space-y-6">
+        <Text type="heading">Error</Text>
+        <p>No tour ID found. Please complete the previous steps first.</p>
+        <Button variant="outline" onClick={() => setCurrentStep(4)}>
+          Go Back to Gallery
+        </Button>
+      </div>
+    );
+  }
+
+  const { mutate: updateStatus } = usePut<{ success: boolean; data: Tour }>(
+    `/services/${tourData._id}`,
+    {},
+    {
+      onSuccess: () => {
+        toast.success("Tour created successfully!");
+        resetForm();
+        navigate("/services");
+      },
+      onError: (error: any) => {
+        toast.error(`Failed to finalize tour: ${error.message}`);
+      },
+    }
+  );
+
   const handleSubmit = async () => {
     setIsSubmitting(true);
-
     try {
-      const completeTour = {
-        ...tourData,
-        status: "draft",
-      };
-
-
-      const response = await createTourMutation.mutateAsync(completeTour);
-
-      if (response && response.success) {
-        toast.success("Tour created successfully!");
-        resetForm(); // Reset form after success
-        navigate("/services");
-      } else {
-        throw new Error(response?.message || "Failed to create tour");
-      }
-    } catch (error: any) {
-      console.error("Tour creation error:", error.response?.data || error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to create tour. Please try again.";
-
-      toast.error(errorMessage);
+      updateStatus({ status: "draft" });
+    } catch (error) {
+      console.error("Tour finalization error:", error);
+      toast.error("Failed to finalize tour.");
     } finally {
       setIsSubmitting(false);
     }
@@ -49,7 +56,6 @@ const Review = () => {
       <Text type="heading">Review Your Tour</Text>
 
       <div className="space-y-4">
-        {/* Basic Information */}
         <div className="border rounded-lg p-4">
           <Text type="subTitle" className="mb-3">
             Basic Information
@@ -93,7 +99,6 @@ const Review = () => {
           </div>
         )}
 
-        {/* Tour Plan */}
         {tourData.tourPlan && (
           <div className="border rounded-lg p-4">
             <Text type="subTitle" className="mb-3">
@@ -131,7 +136,6 @@ const Review = () => {
           </div>
         )}
 
-        {/* Location */}
         {tourData.location && (
           <div className="border rounded-lg p-4">
             <Text type="subTitle" className="mb-3">
@@ -162,7 +166,6 @@ const Review = () => {
           </div>
         )}
 
-        {/* Gallery */}
         {tourData.gallery && (
           <div className="border rounded-lg p-4">
             <Text type="subTitle" className="mb-3">

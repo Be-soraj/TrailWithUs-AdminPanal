@@ -6,9 +6,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import Text from "@/components/common/text";
+import usePut from "@/hooks/usePut";
+import type { Tour } from "@/types/tour";
 
 const TourPlanStep = () => {
   const { tourData, setTourData, setCurrentStep } = useTourForm();
+
+  if (!tourData._id) {
+    return (
+      <div className="p-6 space-y-6">
+        <Text type="heading">Error</Text>
+        <p>No tour ID found. Please complete the previous steps first.</p>
+        <Button variant="outline" onClick={() => setCurrentStep(1)}>
+          Go Back to Information
+        </Button>
+      </div>
+    );
+  }
 
   const { register, handleSubmit, control, setValue, getValues } = useForm({
     defaultValues: tourData.tourPlan || {
@@ -29,12 +43,31 @@ const TourPlanStep = () => {
     name: "itinerary",
   });
 
+  const { mutate: updateTour, isPending } = usePut<{
+    success: boolean;
+    data: Tour;
+  }>(
+    `/services/${tourData._id}`,
+    {},
+    {
+      onSuccess: (result) => {
+        setTourData(result.data); // Use full updated data
+        setCurrentStep(3);
+      },
+      onError: (error) => {
+        alert(`Failed to update tour plan: ${error.message}`);
+      },
+    }
+  );
+
   const onSubmit = (data: any) => {
-    setTourData({
-      ...tourData,
-      tourPlan: data,
-    });
-    setCurrentStep(3);
+    // Merge the updated tourPlan with the existing tourData
+    const updatedTourData = {
+      ...tourData, // Spread the existing tourData to retain all fields
+      tourPlan: data, // Update only the tourPlan field
+    };
+
+    updateTour(updatedTourData); // Send the full data to the API
   };
 
   const addDay = () => {
@@ -81,7 +114,7 @@ const TourPlanStep = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">  
+    <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
       <Text type="heading">Tour Plan</Text>
 
       <div>
@@ -206,7 +239,9 @@ const TourPlanStep = () => {
         >
           Back
         </Button>
-        <Button type="submit">Next</Button>
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Updating..." : "Next"}
+        </Button>
       </div>
     </form>
   );

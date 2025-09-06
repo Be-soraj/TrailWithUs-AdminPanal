@@ -12,10 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Upload, X, AlertCircle } from "lucide-react";
+import { useRef, useState } from "react";
 import type { Tour } from "@/types/tour";
+import usePost from "@/hooks/usePost";
 
 const priceUnits = [
   { value: "USD", label: "US Dollar ($)" },
@@ -32,8 +33,70 @@ const participantTypes = [
   { value: "couple", label: "Per Couple" },
 ];
 
+interface ImageFile {
+  file: File;
+  preview: string;
+}
+
+interface ApiError extends Error {
+  code?: string;
+  response?: {
+    status: number;
+    data: any;
+  };
+}
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for single image
+
 const CreateTour = () => {
   const { tourData, setTourData, setCurrentStep } = useTourForm();
+  const [imageFile, setImageFile] = useState<ImageFile | null>(null);
+  const [imageError, setImageError] = useState<string>("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const imageRef = useRef<HTMLInputElement>(null);
+
+  const { mutate: createTour, isPending } = usePost<
+    { success: boolean; data: Tour },
+    FormData
+  >(
+    "/services",
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 30000,
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total) {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(progress);
+        }
+      },
+    },
+    {
+      onSuccess: (result) => {
+        setTourData(result.data); // Use full API response data
+        setUploadProgress(0);
+        setCurrentStep(1);
+      },
+      onError: (error: unknown) => {
+        console.error("Failed to create service:", error);
+        setUploadProgress(0);
+        const apiError = error as ApiError;
+        let message = apiError.message || "Please try again.";
+        if (apiError.code === "ECONNABORTED") {
+          message = "Request timed out. Please try with a smaller image.";
+        } else if (apiError.response?.status === 413) {
+          message = "File too large. Max 10MB.";
+        } else if (apiError.response?.data?.message) {
+          message = apiError.response.data.message;
+        }
+        alert(`Failed to create service: ${message}`);
+      },
+    }
+  );
+
   const {
     register,
     handleSubmit,
@@ -53,26 +116,67 @@ const CreateTour = () => {
     mode: "onBlur",
   });
 
-  const onSubmit = (data: Partial<Tour>) => {
-    setTourData(data);
-    setCurrentStep(1);
+  const descriptionValue = watch("description") || "";
+
+  const handleOpenUpload = () => {
+    if (imageRef.current) {
+      imageRef.current.click();
+    }
   };
 
-  const descriptionValue = watch("description") || "";
-  const priceUnitValue = watch("priceUnit") || "USD";
-  const participantTypeValue = watch("participantType") || "person";
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setImageError("Only image files are allowed");
+      return;
+    }
+
+    if (file.size > MAX_FILE_SIZE) {
+      setImageError("File size must be less than 10MB");
+      return;
+    }
+
+    const preview = URL.createObjectURL(file);
+    setImageFile({ file, preview });
+    setImageError("");
+
+    if (imageRef.current) {
+      imageRef.current.value = "";
+    }
+  };
+
+  const removeImage = () => {
+    if (imageFile) {
+      URL.revokeObjectURL(imageFile.preview);
+    }
+    setImageFile(null);
+    setImageError("");
+  };
+
+  const onSubmit = async (data: Partial<Tour>) => {
+    if (!imageFile) {
+      alert("Please upload a main image");
+      return;
+    }
+
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined) {
+        formData.append(key, value as string);
+      }
+    });
+    formData.append("image", imageFile.file);
+
+    createTour(formData);
+  };
 
   return (
-    <Card className="mx-auto rounded-none">
+    <Card>
       <CardHeader>
-        <Text type="heading" className="text-2xl font-bold">
-          Create New Tour
-        </Text>
-        <Badge variant="outline" className="mt-2">
-          Step 1: Basic Information
-        </Badge>
+        <Text type="heading">Create Tour</Text>
       </CardHeader>
-
       <CardContent>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -120,62 +224,64 @@ const CreateTour = () => {
 
             <div className="space-y-2">
               <Label>Price*</Label>
-              <div className="flex items-center gap-2">
+              <div className="relative">
                 <Input
                   type="number"
-                  placeholder="299"
-                  className="flex-1"
+                  placeholder="500"
                   {...register("price", {
                     required: "Price is required",
                     min: {
                       value: 0,
-                      message: "Price must be positive",
+                      message: "Price must be non-negative",
                     },
                     valueAsNumber: true,
                   })}
                 />
-
-                {/* Currency Select */}
-                <Select
-                  value={priceUnitValue}
-                  onValueChange={(value: string) =>
-                    setValue("priceUnit", value)
-                  }
-                >
-                  <SelectTrigger className="w-fit">
-                    <SelectValue placeholder="Currency" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {priceUnits.map((unit) => (
-                      <SelectItem key={unit.value} value={unit.value}>
-                        {unit.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                {/* Participant Type Select */}
-                <Select
-                  value={participantTypeValue}
-                  onValueChange={(value: string) =>
-                    setValue("participantType", value)
-                  }
-                >
-                  <SelectTrigger className="w-fit">
-                    <SelectValue placeholder="Per" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {participantTypes.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>
-                        {type.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                  <Select
+                    onValueChange={(value) => setValue("priceUnit", value)}
+                    defaultValue={watch("priceUnit") || "USD"}
+                  >
+                    <SelectTrigger className="h-6 w-24 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {priceUnits.map((unit) => (
+                        <SelectItem key={unit.value} value={unit.value}>
+                          {unit.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               {errors.price && (
                 <p className="text-red-500 text-sm mt-1">
                   {errors.price.message}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Participant Type*</Label>
+              <Select
+                onValueChange={(value) => setValue("participantType", value)}
+                defaultValue={watch("participantType") || "person"}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {participantTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.participantType && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.participantType.message}
                 </p>
               )}
             </div>
@@ -274,30 +380,62 @@ const CreateTour = () => {
           </div>
 
           <div className="space-y-2">
-            <div>
-              <Label>Image URL*</Label>
-              <Input
-                placeholder="Paste image URL or upload from Unsplash/Cloudinary"
-                className="mt-2"
-                {...register("image", {
-                  required: "Image URL is required",
-                  validate: {
-                    validUrl: (value) =>
-                      /^(https?:\/\/).+\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(
-                        value || ""
-                      ) ||
-                      /unsplash\.com|res\.cloudinary\.com/i.test(value || "") ||
-                      "Please enter a valid image URL",
-                  },
-                })}
-              />
-              {errors.image && (
-                <p className="text-red-500 text-sm mt-1">
-                  {errors.image.message}
-                </p>
-              )}
+            <Label htmlFor="uploadPic" className="text-black">
+              Upload Main Image*
+            </Label>
+            <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+              <AlertCircle size={16} />
+              <span>Max 10MB, one image only</span>
             </div>
+            {imageFile ? (
+              <div className="relative border rounded-md p-2 w-48">
+                <X
+                  onClick={removeImage}
+                  size={20}
+                  className="absolute top-1 right-1 cursor-pointer bg-white rounded-full p-1 hover:bg-gray-100"
+                />
+                <img
+                  src={imageFile.preview}
+                  className="w-full h-32 object-cover rounded"
+                  alt="Main preview"
+                />
+                {imageError && (
+                  <p className="text-xs text-red-500 mt-1">{imageError}</p>
+                )}
+              </div>
+            ) : (
+              <div
+                onClick={handleOpenUpload}
+                className={`border-2 ${
+                  imageError ? "border-red-300" : "border-gray-200"
+                } rounded-sm min-h-40 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition-colors`}
+              >
+                <Input
+                  onChange={handleImageChange}
+                  ref={imageRef}
+                  className="hidden"
+                  type="file"
+                  accept="image/*"
+                />
+                <Upload className="text-gray-400" size={30} />
+                <span className="text-xs md:text-sm text-gray-400">
+                  Upload Main Image
+                </span>
+                {imageError && (
+                  <p className="text-xs text-red-500 mt-1">{imageError}</p>
+                )}
+              </div>
+            )}
           </div>
+
+          {isPending && (
+            <div className="w-full bg-gray-200 rounded-full h-2.5">
+              <div
+                className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              ></div>
+            </div>
+          )}
 
           <div className="flex justify-between pt-4 border-t">
             <Button variant="outline" type="button" size="lg">
@@ -306,9 +444,14 @@ const CreateTour = () => {
             <Button
               type="submit"
               size="lg"
-              disabled={Object.keys(errors).length > 0}
+              disabled={
+                Object.keys(errors).length > 0 ||
+                !!imageError ||
+                isPending ||
+                !imageFile
+              }
             >
-              Next: Tour Details
+              {isPending ? "Creating..." : "Next: Tour Details"}
             </Button>
           </div>
         </form>

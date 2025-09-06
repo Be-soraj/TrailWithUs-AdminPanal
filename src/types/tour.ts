@@ -29,8 +29,8 @@ export interface Location {
 
 export interface GalleryImage {
   image: string;
-  colSpan?: number;
-  rowSpan?: number;
+  colSpan: number;
+  rowSpan: number;
 }
 
 export interface Gallery {
